@@ -1,12 +1,14 @@
 package com.tinkerpop.blueprints.pgm.impls.git;
 
-import com.tinkerpop.blueprints.pgm.AutomaticIndex;
-import com.tinkerpop.blueprints.pgm.Edge;
-import com.tinkerpop.blueprints.pgm.Element;
-import com.tinkerpop.blueprints.pgm.Index;
-import com.tinkerpop.blueprints.pgm.IndexableGraph;
-import com.tinkerpop.blueprints.pgm.Vertex;
-import com.tinkerpop.blueprints.pgm.impls.tg.TinkerGraph;
+import com.tinkerpop.blueprints.Edge;
+import com.tinkerpop.blueprints.Element;
+import com.tinkerpop.blueprints.Features;
+import com.tinkerpop.blueprints.GraphQuery;
+import com.tinkerpop.blueprints.Index;
+import com.tinkerpop.blueprints.IndexableGraph;
+import com.tinkerpop.blueprints.Parameter;
+import com.tinkerpop.blueprints.Vertex;
+import com.tinkerpop.blueprints.impls.tg.TinkerGraph;
 
 import java.io.File;
 import java.io.IOException;
@@ -63,57 +65,48 @@ public class GitGraph implements IndexableGraph {
         helper.load(directory, base);
     }
 
-    @Override
-    public <T extends Element> Index<T> createManualIndex(final String indexName,
-                                                          final Class<T> indexClass) {
-        return base.createManualIndex(indexName, indexClass);
+    public <T extends Element> Index<T> createIndex(String indexName, Class<T> indexClass, Parameter... indexParameters) {
+        return null;
     }
 
-    @Override
-    public <T extends Element> AutomaticIndex<T> createAutomaticIndex(final String indexName,
-                                                                      final Class<T> indexClass,
-                                                                      final Set<String> indexKeys) {
-        return base.createAutomaticIndex(indexName, indexClass, indexKeys);
-    }
-
-    @Override
     public <T extends Element> Index<T> getIndex(final String indexName,
                                                  final Class<T> indexClass) {
         return base.getIndex(indexName, indexClass);
     }
 
-    @Override
     public Iterable<Index<? extends Element>> getIndices() {
         return base.getIndices();
     }
 
-    @Override
     public void dropIndex(final String indexName) {
         base.dropIndex(indexName);
     }
 
-    @Override
+    public Features getFeatures() {
+        return null;
+    }
+
     public Vertex addVertex(final Object id) {
         validateElementId(id);
         return base.addVertex(id);
     }
 
-    @Override
     public Vertex getVertex(final Object id) {
         return base.getVertex(id);
     }
 
-    @Override
     public void removeVertex(final Vertex vertex) {
         base.removeVertex(vertex);
     }
 
-    @Override
     public Iterable<Vertex> getVertices() {
         return base.getVertices();
     }
 
-    @Override
+    public Iterable<Vertex> getVertices(String key, Object value) {
+        return null;
+    }
+
     public Edge addEdge(final Object id,
                         final Vertex outVertex,
                         final Vertex inVertex,
@@ -124,27 +117,26 @@ public class GitGraph implements IndexableGraph {
         return base.addEdge(id, outVertex, inVertex, label);
     }
 
-    @Override
     public Edge getEdge(final Object id) {
         return base.getEdge(id);
     }
 
-    @Override
     public void removeEdge(final Edge edge) {
         base.removeEdge(edge);
     }
 
-    @Override
     public Iterable<Edge> getEdges() {
         return base.getEdges();
     }
 
-    @Override
-    public void clear() {
-        base.clear();
+    public Iterable<Edge> getEdges(String key, Object value) {
+        return null;
     }
 
-    @Override
+    public GraphQuery query() {
+        return null;
+    }
+
     public void shutdown() {
         try {
             save();

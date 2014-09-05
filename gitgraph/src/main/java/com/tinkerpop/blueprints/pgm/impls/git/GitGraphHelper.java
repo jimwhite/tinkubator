@@ -1,9 +1,10 @@
 package com.tinkerpop.blueprints.pgm.impls.git;
 
-import com.tinkerpop.blueprints.pgm.Edge;
-import com.tinkerpop.blueprints.pgm.Element;
-import com.tinkerpop.blueprints.pgm.Graph;
-import com.tinkerpop.blueprints.pgm.Vertex;
+import com.tinkerpop.blueprints.Direction;
+import com.tinkerpop.blueprints.Edge;
+import com.tinkerpop.blueprints.Element;
+import com.tinkerpop.blueprints.Graph;
+import com.tinkerpop.blueprints.Vertex;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -52,7 +53,6 @@ class GitGraphHelper {
     }
 
     /**
-     * Caution: the graph will be cleared of any pre-existing data
      *
      * @param directory
      * @param graph
@@ -60,8 +60,6 @@ class GitGraphHelper {
      */
     public void load(final File directory,
                      final Graph graph) throws IOException {
-        graph.clear();
-
         if (directory.exists()) {
             loadRecursive(graph, directory, "");
         }
@@ -245,8 +243,8 @@ class GitGraphHelper {
         out.write('\t');
 
         // ...then tail vertex, then head vertex...
-        Object outId = e.getOutVertex().getId();
-        Object inId = e.getInVertex().getId();
+        Object outId = e.getVertex(Direction.OUT).getId();
+        Object inId = e.getVertex(Direction.IN).getId();
         if (!(outId instanceof String)) {
             throw new IOException("vertex ID is not a string: " + outId);
         }
