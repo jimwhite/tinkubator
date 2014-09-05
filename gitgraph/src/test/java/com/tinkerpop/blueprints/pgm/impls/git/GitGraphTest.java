@@ -1,8 +1,9 @@
 package com.tinkerpop.blueprints.pgm.impls.git;
 
-import com.tinkerpop.blueprints.pgm.Edge;
-import com.tinkerpop.blueprints.pgm.Graph;
-import com.tinkerpop.blueprints.pgm.Vertex;
+import com.tinkerpop.blueprints.Direction;
+import com.tinkerpop.blueprints.Edge;
+import com.tinkerpop.blueprints.Graph;
+import com.tinkerpop.blueprints.Vertex;
 import junit.framework.TestCase;
 
 import java.io.File;
@@ -18,9 +19,7 @@ public class GitGraphTest extends TestCase {
         Vertex v1, v2, v3, v4, v5, v6;
         Edge e1, e2, e3, e4;
 
-        File baseDir = System.getProperty("os.name").toUpperCase().contains("WINDOWS")
-                ? new File("C:/temp/gitgraph-test")
-                : new File("/tmp/gitgraph-test");
+        File baseDir = new File("build/tmp/gitgraph-test");
         if (baseDir.exists()) {
             GitGraphHelper.deleteDirectory(baseDir);
         }
@@ -42,8 +41,8 @@ public class GitGraphTest extends TestCase {
         assertEquals(1, count(g.getEdges()));
         v1 = g.getVertex("melaney");
         assertEquals(0.6, v1.getProperty("age"));
-        assertEquals(1, count(v1.getOutEdges()));
-        assertEquals(0, count(v1.getInEdges()));
+        assertEquals(1, count(v1.getEdges(Direction.OUT)));
+        assertEquals(0, count(v1.getEdges(Direction.IN)));
         g.shutdown();
 
         // Create child graph #2
@@ -66,13 +65,13 @@ public class GitGraphTest extends TestCase {
         assertEquals(2, count(g.getEdges()));
         v4 = g.getVertex("leon");
         assertEquals(0.5, v4.getProperty("age"));
-        v1 = v4.getOutEdges("lives in").iterator().next().getInVertex();
+        v1 = v4.getEdges(Direction.OUT, "lives in").iterator().next().getVertex(Direction.IN);
         assertEquals("china", v1.getId());
         assertEquals("China", v1.getProperty("name"));
-        e1 = v1.getInEdges().iterator().next();
+        e1 = v1.getEdges(Direction.IN).iterator().next();
         assertEquals("weird  \tedge", e1.getId());
         assertEquals("weird\tlabel", e1.getLabel());
-        v2 = e1.getOutVertex();
+        v2 = e1.getVertex(Direction.OUT);
         assertEquals("\n weird vertex", v2.getId());
         assertEquals(12345l, e1.getProperty("  a\t\nweird property"));
         g.shutdown();
@@ -91,8 +90,8 @@ public class GitGraphTest extends TestCase {
         // Validate the combined graph.
         g = new GitGraph(baseDir);
         v4 = g.getVertex("test2/leon");
-        assertEquals(2, count(v4.getOutEdges()));
-        assertEquals("test1/melaney", v4.getOutEdges("knows").iterator().next().getInVertex().getId());
+        assertEquals(2, count(v4.getEdges(Direction.OUT)));
+        assertEquals("test1/melaney", v4.getEdges(Direction.OUT, "knows").iterator().next().getVertex(Direction.IN).getId());
         g.shutdown();
 
         // Add a grandchild graph.
@@ -110,7 +109,7 @@ public class GitGraphTest extends TestCase {
         assertEquals(1, count(g.getEdges()));
         assertEquals(2, count(g.getVertices()));
         v2 = g.getVertex("color");
-        assertEquals("yellow", v2.getInEdges().iterator().next().getOutVertex().getId());
+        assertEquals("yellow", v2.getEdges(Direction.IN).iterator().next().getVertex(Direction.OUT).getId());
         g.shutdown();
 
         // Add a new edge into the grandchild from the level of its parent.
@@ -122,7 +121,7 @@ public class GitGraphTest extends TestCase {
         assertEquals("yellow", v1.getProperty("name"));
         v1.setProperty("comment", "comes after orange");
         e1 = g.addEdge("E", v4, v1, "likes");
-        assertEquals(1, count(v4.getOutEdges("likes")));
+        assertEquals(1, count(v4.getEdges(Direction.OUT, "likes")));
         e1.setProperty("comment", "just a hunch");
         g.shutdown();
 
@@ -130,8 +129,8 @@ public class GitGraphTest extends TestCase {
         g = new GitGraph(baseDir);
         v1 = g.getVertex("test2/leon");
         assertEquals(0.5, v1.getProperty("age"));
-        assertEquals(1, count(v1.getOutEdges("likes")));
-        v2 = v1.getOutEdges("likes").iterator().next().getInVertex();
+        assertEquals(1, count(v1.getEdges(Direction.OUT, "likes")));
+        v2 = v1.getEdges(Direction.OUT, "likes").iterator().next().getVertex(Direction.IN);
         assertEquals("test2/test3/yellow", v2.getId());
         assertEquals("comes after orange", v2.getProperty("comment"));
         g.shutdown();
