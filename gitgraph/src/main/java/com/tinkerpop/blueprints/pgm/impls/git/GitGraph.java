@@ -66,7 +66,7 @@ public class GitGraph implements IndexableGraph {
     }
 
     public <T extends Element> Index<T> createIndex(String indexName, Class<T> indexClass, Parameter... indexParameters) {
-        return null;
+        return base.createIndex(indexName, indexClass, indexParameters);
     }
 
     public <T extends Element> Index<T> getIndex(final String indexName,
@@ -83,7 +83,7 @@ public class GitGraph implements IndexableGraph {
     }
 
     public Features getFeatures() {
-        return null;
+        return base.getFeatures();
     }
 
     public Vertex addVertex(final Object id) {

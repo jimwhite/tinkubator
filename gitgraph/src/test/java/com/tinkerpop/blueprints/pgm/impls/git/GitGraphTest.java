@@ -7,6 +7,7 @@ import com.tinkerpop.blueprints.Vertex;
 import junit.framework.TestCase;
 
 import java.io.File;
+import java.io.IOException;
 
 /**
  * User: josh
@@ -21,7 +22,7 @@ public class GitGraphTest extends TestCase {
 
         File baseDir = new File("build/tmp/gitgraph-test");
         if (baseDir.exists()) {
-            GitGraphHelper.deleteDirectory(baseDir);
+            if (!GitGraphHelper.deleteRecursively(baseDir)) throw new IOException("Failed to delete GitGraph directory: " + baseDir);
         }
 
         // Create child graph #1

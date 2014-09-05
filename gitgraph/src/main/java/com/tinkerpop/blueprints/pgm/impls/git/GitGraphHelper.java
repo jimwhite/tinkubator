@@ -9,7 +9,6 @@ import com.tinkerpop.blueprints.Vertex;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -18,7 +17,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -72,9 +70,9 @@ class GitGraphHelper {
 
         // Clear the directory
         if (directory.exists()) {
-            deleteDirectory(directory);
+            if (!deleteRecursively(directory)) throw new IOException("Failed to delete GitGraph directory: " + directory);
         }
-        directory.mkdirs();
+        if (!directory.mkdirs()) throw new IOException("Failed to make GitGraph directory: " + directory);
 
         String curPath;
         OutputStream elOut;
@@ -214,18 +212,23 @@ class GitGraphHelper {
         }
     }
 
-    public static boolean deleteDirectory(final File dir) {
-        if (dir.exists()) {
-            File[] files = dir.listFiles();
-            for (File f : files) {
-                if (f.isDirectory()) {
-                    deleteDirectory(f);
-                } else {
-                    f.delete();
-                }
-            }
+    /**
+     * This deletes recursively with the same sort of strict conditions that File.delete()
+     * uses which is that we only return true if the file was really deleted.
+     * The upshot is that races abound if concurrent deletions are possible.  Don't do that.  ;-)
+     *
+     * @param f the file or directory (not necessarily empty) to be deleted.
+     * @return  true if the file or directory and all its children were actually deleted.
+     */
+    public static boolean deleteRecursively(final File f) {
+        if (!f.exists()) return false;
+        if (!f.isDirectory()) return f.delete();
+        File[] files = f.listFiles();
+        if (files == null) return false;
+        for (File g : files) {
+            if (!(deleteRecursively(g))) return false;
         }
-        return dir.delete();
+        return f.delete();
     }
 
     private void writeVertex(final RelativeId r,
