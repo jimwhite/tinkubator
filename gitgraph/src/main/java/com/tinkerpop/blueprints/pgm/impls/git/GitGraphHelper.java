@@ -22,6 +22,8 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * An object to read and write <code>GitGraph</code>s from the file system.
@@ -288,50 +290,52 @@ class GitGraphHelper {
     private void loadRecursive(final Graph graph,
                                final File directory,
                                final String parentPath) throws IOException {
+        File vertices = null;
+        File edges = null;
+        File vprops = null;
+        File eprops = null;
+
         //System.out.println("loading from: " + directory + " using parentPath " + parentPath);
         if (!directory.isDirectory()) {
             throw new IOException("file is not a directory: " + directory);
         }
 
-        // Examine all files in this directory.  There are four special files, which may or may not be present.
-        // Any other file is assumed to be the directory of a child graph.
-        Map<String, File> files = new HashMap<String, File>();
-        for (File child : directory.listFiles()) {
-            files.put(child.getName(), child);
+        File[] files = directory.listFiles();
+        if (files == null) {
+            throw new IOException("Failed to list files in directory: " + directory);
         }
 
-        File vertices = files.get(VERTICES);
+        // Load children first, so that all vertices are defined prior to edges being read.
+        for (File child : files) {
+            String name = child.getName();
+
+            if (name.equals(VERTICES)) vertices = child;
+            else if (name.equals(EDGES)) edges = child;
+            else if (name.equals(VERTEX_PROPERTIES)) vprops = child;
+            else if (name.equals(EDGE_PROPERTIES)) eprops = child;
+            else if (child.isDirectory()) {
+                if (name.contains("/")) {
+                    throw new IOException("file name contains the reserved '/' character");
+                }
+
+                loadRecursive(graph, child, parentPath + name + "/");
+            } else {
+                // Some file other than ours.  That's okay.
+            }
+        }
+
         //if (null == vertices) {
         //    throw new IOException("missing '" + VERTICES + "' file in " + directory);
         //}
-        files.remove(VERTICES);
-
-        File edges = files.get(EDGES);
         //if (null == edges) {
         //    throw new IOException("missing '" + EDGES + "' file in " + directory);
         //}
-        files.remove(EDGES);
-
-        File vprops = files.get(VERTEX_PROPERTIES);
         //if (null == vprops) {
         //    throw new IOException("missing '" + VERTEX_PROPERTIES + "' file in " + directory);
         //}
-        files.remove(VERTEX_PROPERTIES);
-
-        File eprops = files.get(EDGE_PROPERTIES);
         //if (null == eprops) {
         //    throw new IOException("missing '" + EDGE_PROPERTIES + "' file in " + directory);
         //}
-        files.remove(EDGE_PROPERTIES);
-
-        // Load children first, so that all vertices are defined prior to edges being read.
-        for (File child : files.values()) {
-            if (child.getName().contains("/")) {
-                throw new IOException("file name contains the reserved '/' character");
-            }
-
-            loadRecursive(graph, child, parentPath + child.getName() + "/");
-        }
 
         if (null != vertices) {
             readVertices(vertices, graph, parentPath);
@@ -445,16 +449,48 @@ class GitGraphHelper {
         }
     }
 
+//    private static String escape(final String s) {
+//        return s.replaceAll("\\\\", "\\\\\\\\")
+//                .replaceAll("\n", "\\\\n")   // Line breaks need to be escaped
+//                .replaceAll("\t", "\\\\t");  // So do tabs, which delimit fields in the files.
+//    }
+//
+//    private static String unescape(final String s) {
+//        return s.replaceAll("\\\\t", "\t")
+//                .replaceAll("\\\\n", "\n")
+//                .replaceAll("\\\\\\\\", "\\");
+//    }
+
+    // This could be done more simply (and probably faster) as a char-at-a-time loop.
+    // The original code above isn't quite correct and is extra slow because it recompiles
+    // the pattern objects on every call.  That code escaped '\' as '\\', but that is ambiguous
+    // if followed by a 'n' or 't'.  Therefore use '\-' as the escape for '\'.
+    // Using a standard scheme such as for HTML entities (content) or URL encoding (paths) would be better.
+
+    // The escape needs escaping.
+    private static Pattern backslashPattern = Pattern.compile("\\\\");
+    // Line breaks need to be escaped
+    private static Pattern newlinePattern = Pattern.compile("\n", Pattern.LITERAL);
+    // So do tabs, which delimit fields in the files.
+    private static Pattern tabPattern = Pattern.compile("\t", Pattern.LITERAL);
     private static String escape(final String s) {
-        return s.replaceAll("\\\\", "\\\\")
-                .replaceAll("\\n", "\\\\n")   // Line breaks need to be escaped
-                .replaceAll("\\t", "\\\\t");  // So do tabs, which delimit fields in the files.
+        return tabPattern.matcher(
+                newlinePattern.matcher(
+                        backslashPattern.matcher(s).replaceAll("\\\\-"))
+                    .replaceAll("\\\\n"))
+                .replaceAll("\\\\t");
     }
 
+    private static Pattern escapedEscapePattern = Pattern.compile("\\-", Pattern.LITERAL);
+    private static Pattern escapedNewlinePattern = Pattern.compile("\\n", Pattern.LITERAL);
+    private static Pattern escapedTabPattern = Pattern.compile("\\t", Pattern.LITERAL);
+
     private static String unescape(final String s) {
-        return s.replaceAll("\\\\t", "\t")
-                .replaceAll("\\\\n", "\n")
-                .replaceAll("\\\\", "\\");
+        return escapedEscapePattern.matcher(
+                escapedNewlinePattern.matcher(
+                        escapedTabPattern.matcher(s).replaceAll("\t"))
+                .replaceAll("\n"))
+            .replaceAll("\\\\");
     }
 
     /*

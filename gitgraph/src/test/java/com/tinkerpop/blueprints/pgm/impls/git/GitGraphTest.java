@@ -56,8 +56,9 @@ public class GitGraphTest extends TestCase {
         e2 = g.addEdge("B", v4, v5, "lives in");
         e2.setProperty("as of", "2011-04-13");
         v6 = g.addVertex("\n weird vertex");
-        e3 = g.addEdge("weird  \tedge", v6, v5, "weird\tlabel");
-        e3.setProperty("  a\t\nweird property", 12345l);
+//        e3 = g.addEdge("weird  \tedge", v6, v5, "weird\tlabel\\n&\\t");
+        e3 = g.addEdge("weird  \tedge", v6, v5, "weird\tlabel\\");
+        e3.setProperty("  a\t\nweird proper\\ty", 12345l);
         g.shutdown();
 
         // Validate persistence of graph #2 alone.
@@ -71,10 +72,11 @@ public class GitGraphTest extends TestCase {
         assertEquals("China", v1.getProperty("name"));
         e1 = v1.getEdges(Direction.IN).iterator().next();
         assertEquals("weird  \tedge", e1.getId());
-        assertEquals("weird\tlabel", e1.getLabel());
+//        assertEquals("weird\tlabel\\n&\\t", e1.getLabel());
+        assertEquals("weird\tlabel\\", e1.getLabel());
         v2 = e1.getVertex(Direction.OUT);
         assertEquals("\n weird vertex", v2.getId());
-        assertEquals(12345l, e1.getProperty("  a\t\nweird property"));
+        assertEquals(12345l, e1.getProperty("  a\t\nweird proper\\ty"));
         g.shutdown();
 
         // Combine the two graphs as a super-graph.
